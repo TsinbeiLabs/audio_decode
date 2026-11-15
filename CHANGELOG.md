@@ -7,8 +7,11 @@
 - README: removed the timing comparison against another decoder, the
   description of a Flutter-based decoder, the wrapper comparison table and the
   `audioInfo` timing table. The repository has no benchmark or test behind them.
-- README: Flutter is no longer described as tested. CI runs the Dart VM tests
-  on Linux, macOS and Windows.
+- README: Flutter support is described only as far as CI runs it. A generated
+  Flutter app decodes an Ogg Vorbis and an MP3 fixture on Linux, on Android
+  emulators at API 24 and 36, and on an iOS simulator.
+- The pubspec declares `platforms:` (Android, iOS, Linux, macOS, Windows),
+  the same five that pub.dev derived for 1.3.5. Web is not listed.
 - README: the standalone binary section now agrees with the Platforms section
   about what `dart compile exe` does.
 - README: `bench/vs_ffmpeg.dart` is described as checking that both paths decode

@@ -21,6 +21,10 @@ on:
     - cron: '17 4 * * 1'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
@@ -82,7 +86,9 @@ jobs:
         with:
           flutter-version: ${{ matrix.flutter.version }}
           channel: stable
-          cache: true
+          # The macOS SDK cache is about 2 GB per version and pushes the repo
+          # over its cache limit for little gain.
+          cache: ${{ runner.os == 'Linux' }}
 
       - name: Install the Linux desktop toolchain
         if: matrix.target == 'linux'
@@ -214,9 +220,8 @@ jobs:
 
   ios-simulator:
     name: Flutter ${{ matrix.flutter.version }} iOS simulator
-    # Pinned. The macos-15 image defaults to Xcode 16.4. Flutter 3.38.10 needs
-    # Xcode 14 or newer and 3.50.0 needs Xcode 15 or newer, which keeps both
-    # releases on the same Xcode.
+    # Pinned to Xcode 16.4, the macos-15 default. Flutter 3.38.10 needs Xcode 14
+    # or newer and 3.50.0 needs Xcode 15 or newer, and both run on it.
     runs-on: macos-15
     timeout-minutes: 45
     env:

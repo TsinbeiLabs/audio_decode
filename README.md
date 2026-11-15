@@ -18,8 +18,8 @@ returns the samples (`Int16List`, or `Float32List` through `toFloat32()`) and
 has no playback. Choose this package when your code needs the samples, for
 waveform rendering, analysis or model input. Choose just_audio when the goal is
 to hear the file, when the source is a URL or a stream, or when the app runs in
-a browser. This package is tested on the Dart VM on Linux, macOS and Windows
-only.
+a browser. This package is tested on the Dart VM on Linux, macOS and Windows,
+and in a Flutter app on Linux, Android emulators and an iOS simulator.
 
 **Instead of a pure-Dart decoder.** There is no `dart:` route for this;
 nothing in the SDK decodes MP3 or Ogg Vorbis. The nearest pure-Dart option,
@@ -53,8 +53,10 @@ install beyond a C toolchain.
 The same code path runs in pure Dart (command-line tools, servers, tests). That
 makes it a good fit for waveform rendering, audio analysis, resampling,
 machine-learning preprocessing, servers and games. CI runs the Dart VM tests on
-Linux, macOS and Windows. Flutter runtime support is not verified in this
-repository.
+Linux, macOS and Windows. A generated Flutter app that depends on this package
+decodes an Ogg Vorbis and an MP3 fixture on Linux, on x86_64 Android emulators
+at API 24 and 36, and on an iOS 18.5 simulator, with Flutter 3.38.10 and
+3.50.0.
 
 Decoding is deterministic for a given build: the same bytes decode to the same
 samples every time, and the geometry (channel count, sample rate, frame count)
@@ -333,10 +335,19 @@ Dart 3.11.
 ## Platforms
 
 The build hook compiles the vendored C with the toolchain that
-`package:native_toolchain_c` drives (clang, gcc or MSVC). It targets the
-platforms Dart's native build hooks support: Linux, macOS and Windows on the
-Dart VM today, and Flutter as build-hook support there stabilises. Dart 3.10 or
-newer is required.
+`package:native_toolchain_c` drives (clang, gcc or MSVC). Flutter has enabled
+build hooks on stable since 3.38. Dart 3.10 or newer is required.
+
+The Dart VM tests run on Linux, macOS and Windows. A second workflow
+(`.github/workflows/flutter-compat.yaml`) builds a generated Flutter app on
+every stable line from 3.38 to 3.50. The app decodes both fixtures and checks
+the sample rate, channel count, frame count and a 440 Hz tone on Linux, on
+x86_64 Android emulators at API 24 and 36, and on an iOS simulator on an arm64
+macOS runner (iPhone 16, iOS 18.5, Xcode 16.4). The emulator and simulator
+jobs use Flutter 3.38.10 and 3.50.0. The release APK is checked for 16 KB
+aligned LOAD segments on armeabi-v7a, arm64-v8a and x86_64. Physical devices,
+arm64 Android, Android with 16 KB pages, and Flutter apps on macOS or Windows
+are not run in CI. The package uses `dart:ffi` and does not run on the web.
 
 ### `dart compile exe` does not carry the native library yet
 

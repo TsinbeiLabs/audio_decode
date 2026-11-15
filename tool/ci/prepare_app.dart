@@ -1,6 +1,6 @@
 /// Turns an app made by `flutter create` into the consumer the compat
-/// workflow builds: copies the on-device decode test and its fixtures into it
-/// and declares the fixtures as assets.
+/// workflow builds. It copies the on-device decode test and its fixtures into
+/// the app and declares the fixtures as assets.
 ///
 /// Usage: `dart tool/ci/prepare_app.dart <app directory>`
 ///

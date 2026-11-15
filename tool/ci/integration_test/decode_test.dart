@@ -59,14 +59,14 @@ void main() {
 
 /// Reads a fixture that tool/ci/prepare_app.dart declared as an asset.
 ///
-/// The bundle may hand back a view into a larger buffer. Only the asset's own
-/// bytes are copied out.
+/// The bundle may hand back a view into a larger buffer. The returned view
+/// covers only the asset's own bytes.
 Future<Uint8List> _asset(String name) async {
   final data = await rootBundle.load('assets/$name');
   return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
 }
 
-/// Both fixtures hold a 440 Hz sine in each channel at an RMS of about 2050.
+/// Both fixtures hold a 440 Hz sine in each channel at an RMS of about 2000.
 /// Silence, noise or a wrong channel layout fails here.
 void _expectTone(PcmAudio pcm) {
   for (var channel = 0; channel < pcm.channels; channel++) {

@@ -25,6 +25,16 @@ screenshots:
 environment:
   sdk: ^3.10.0
 
+# Android and iOS run the decode test on an emulator and a simulator in
+# flutter-compat.yaml. Linux, macOS and Windows run the Dart VM tests. The
+# package uses dart:ffi and does not run on the web.
+platforms:
+  android:
+  ios:
+  linux:
+  macos:
+  windows:
+
 dependencies:
   ffi: ^2.1.0
   hooks: '>=2.0.2 <3.0.0'
