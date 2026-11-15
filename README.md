@@ -17,9 +17,11 @@ has an API that returns the decoded samples of a file as a list. This package
 returns the samples (`Int16List`, or `Float32List` through `toFloat32()`) and
 has no playback. Choose this package when your code needs the samples, for
 waveform rendering, analysis or model input. Choose just_audio when the goal is
-to hear the file, when the source is a URL or a stream, or when the app runs in
-a browser. This package is tested on the Dart VM on Linux, macOS and Windows,
-and in a Flutter app on Linux, Android emulators and an iOS simulator.
+to hear the file, when the source is a URL or a stream, or when a browser app
+needs MP3 or Ogg Vorbis. This package compiles for the web, but there it decodes
+WAV only and throws `UnsupportedError` for MP3 and Ogg Vorbis. It is tested on
+the Dart VM on Linux, macOS and Windows, in Chrome for the parts that run on the
+web, and in a Flutter app on Linux, Android emulators and an iOS simulator.
 
 **Instead of a pure-Dart decoder.** There is no `dart:` route for this;
 nothing in the SDK decodes MP3 or Ogg Vorbis. The nearest pure-Dart option,
@@ -347,7 +349,19 @@ macOS runner (iPhone 16, iOS 18.5, Xcode 16.4). The emulator and simulator
 jobs use Flutter 3.38.10 and 3.50.0. The release APK is checked for 16 KB
 aligned LOAD segments on armeabi-v7a, arm64-v8a and x86_64. Physical devices,
 arm64 Android, Android with 16 KB pages, and Flutter apps on macOS or Windows
-are not run in CI. The package uses `dart:ffi` and does not run on the web.
+are not run in CI.
+
+On the web the package compiles, and the parts written in Dart give the same
+results as on the VM. These are `detectFormat`, `decodeWav`, `wavInfo`,
+`encodeWav`, `resample`, `toMono`, `toSpeechPcm`, the `PcmAudio` methods, and
+`decodeAudio` and `audioInfo` for WAV input. Ogg Vorbis and MP3 need the native
+decoders, which are not available on the web. There `decodeOgg`, `decodeMp3`,
+`oggInfo` and `mp3Info` throw `UnsupportedError` for any input, and
+`decodeAudio` and `audioInfo` throw it for Ogg Vorbis or MP3 bytes. No call
+returns empty or partial PCM in place of that error. CI runs these checks in
+Chrome with dart2js and dart2wasm. A Flutter web app build is not run in CI.
+The pubspec does not list web as a platform, because the two formats this
+package exists for do not decode there.
 
 ### `dart compile exe` does not carry the native library yet
 

@@ -1,5 +1,11 @@
 ## 1.3.6
 
+- The package compiles for the web. There `detectFormat`, WAV decoding,
+  `encodeWav`, the `PcmAudio` methods and the resampling helpers give the same
+  results as on the VM. Ogg Vorbis and MP3 decoding throws `UnsupportedError`
+  from `decodeOgg`, `decodeMp3`, `oggInfo` and `mp3Info`, and from
+  `decodeAudio` and `audioInfo` for those formats. Behaviour on the VM is
+  unchanged. CI runs the web tests in Chrome.
 - README: `detectFormat` is documented as also returning `AudioFormat.wav`.
 - README: the `Float32List` snippet shows the `dart:typed_data` import it needs.
 - README and `example/info_without_decoding.dart`: a three-minute 44.1 kHz

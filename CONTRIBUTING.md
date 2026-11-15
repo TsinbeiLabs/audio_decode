@@ -31,6 +31,9 @@ dart analyze --fatal-infos
 dart test
 ```
 
+CI also runs the browser tests on Linux with
+`dart test -p chrome -c dart2js -c dart2wasm`.
+
 ## Pull requests
 
 * One change per pull request.

@@ -24,3 +24,8 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed lib test bench example hook tool
       - run: dart analyze --fatal-infos
       - run: dart test
+      # The web build has no native decoders. These tests check that WAV and
+      # the helpers give the VM results in Chrome and that the native entry
+      # points throw UnsupportedError.
+      - if: matrix.os == 'ubuntu-latest'
+        run: dart test -p chrome -c dart2js -c dart2wasm

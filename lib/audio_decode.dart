@@ -8,6 +8,15 @@
 /// same code path runs in pure Dart (CLI, servers, tests). Flutter runtime
 /// support is not verified in this repository.
 ///
+/// The package also compiles for the web, where the parts written in Dart give
+/// the same results as on the VM. These are [detectFormat], [decodeWav],
+/// [wavInfo], [encodeWav], [resample], [toMono], [toSpeechPcm], [PcmAudio],
+/// and [decodeAudio] and [audioInfo] for WAV input. Ogg Vorbis and MP3 need
+/// the native decoders, which are not available on the web. There
+/// [decodeOgg], [decodeMp3], [oggInfo] and [mp3Info] throw an
+/// [UnsupportedError], and so do [decodeAudio] and [audioInfo] for Ogg Vorbis
+/// or MP3 input.
+///
 /// Decoding is deterministic for a given build, and the geometry it reports is
 /// the same everywhere. Sample values are not bit-identical across CPU
 /// architectures: the decoders compute in floating point, so around 0.03% of

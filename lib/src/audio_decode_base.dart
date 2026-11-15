@@ -1,11 +1,9 @@
-import 'dart:ffi';
 import 'dart:typed_data';
 
+import 'native_unavailable.dart'
+    if (dart.library.ffi) 'native_ffi.dart'
+    as native;
 import 'wav_decoder.dart';
-
-import 'package:ffi/ffi.dart';
-
-import 'bindings.dart';
 
 /// The container format of an encoded audio buffer, as identified by
 /// [detectFormat].
@@ -185,8 +183,10 @@ AudioFormat detectFormat(Uint8List bytes) {
 ///
 /// Throws an [ArgumentError] if [bytes] is empty, and an [AudioDecodeException]
 /// if the bytes are not a decodable Vorbis stream.
-PcmAudio decodeOgg(Uint8List bytes) =>
-    _decode(bytes, adDecodeVorbis, 'Ogg Vorbis');
+///
+/// Throws an [UnsupportedError] on the web for any input. Native decoding is
+/// not available there.
+PcmAudio decodeOgg(Uint8List bytes) => native.decodeOgg(bytes);
 
 /// Decodes an MP3 stream to 16-bit PCM.
 ///
@@ -201,7 +201,10 @@ PcmAudio decodeOgg(Uint8List bytes) =>
 ///
 /// Throws an [ArgumentError] if [bytes] is empty, and an [AudioDecodeException]
 /// if no decodable MP3 frame is found.
-PcmAudio decodeMp3(Uint8List bytes) => _decode(bytes, adDecodeMp3, 'MP3');
+///
+/// Throws an [UnsupportedError] on the web for any input. Native decoding is
+/// not available there.
+PcmAudio decodeMp3(Uint8List bytes) => native.decodeMp3(bytes);
 
 /// Decodes [bytes] after sniffing its format with [detectFormat], dispatching
 /// to [decodeOgg], [decodeMp3] or [decodeWav].
@@ -212,8 +215,12 @@ PcmAudio decodeMp3(Uint8List bytes) => _decode(bytes, adDecodeMp3, 'MP3');
 ///
 /// Throws an [ArgumentError] if [bytes] is empty, and an [AudioDecodeException]
 /// if the format is none of Ogg Vorbis, MP3 or WAV.
+///
+/// On the web, WAV input decodes as it does on other platforms. Ogg Vorbis and
+/// MP3 input throws an [UnsupportedError], as [decodeOgg] and [decodeMp3] do
+/// there.
 PcmAudio decodeAudio(Uint8List bytes) {
-  _checkNotEmpty(bytes);
+  checkNotEmpty(bytes);
   switch (detectFormat(bytes)) {
     case AudioFormat.ogg:
       return decodeOgg(bytes);
@@ -277,7 +284,10 @@ final class AudioInfo {
 ///
 /// Throws an [ArgumentError] if [bytes] is empty, and an [AudioDecodeException]
 /// if the bytes are not a readable Vorbis stream.
-AudioInfo oggInfo(Uint8List bytes) => _info(bytes, adInfoVorbis, 'Ogg Vorbis');
+///
+/// Throws an [UnsupportedError] on the web for any input. Native decoding is
+/// not available there.
+AudioInfo oggInfo(Uint8List bytes) => native.oggInfo(bytes);
 
 /// Reads an MP3 stream's geometry without producing any audio.
 ///
@@ -288,7 +298,10 @@ AudioInfo oggInfo(Uint8List bytes) => _info(bytes, adInfoVorbis, 'Ogg Vorbis');
 ///
 /// Throws an [ArgumentError] if [bytes] is empty, and an [AudioDecodeException]
 /// if no MP3 frame is found.
-AudioInfo mp3Info(Uint8List bytes) => _info(bytes, adInfoMp3, 'MP3');
+///
+/// Throws an [UnsupportedError] on the web for any input. Native decoding is
+/// not available there.
+AudioInfo mp3Info(Uint8List bytes) => native.mp3Info(bytes);
 
 /// Reads [bytes]'s geometry after sniffing its format with [detectFormat],
 /// dispatching to [oggInfo], [mp3Info] or [wavInfo].
@@ -300,8 +313,11 @@ AudioInfo mp3Info(Uint8List bytes) => _info(bytes, adInfoMp3, 'MP3');
 ///
 /// Throws an [ArgumentError] if [bytes] is empty, and an [AudioDecodeException]
 /// if the format is none of Ogg Vorbis, MP3 or WAV.
+///
+/// On the web, WAV input is read as it is on other platforms. Ogg Vorbis and
+/// MP3 input throws an [UnsupportedError], as [oggInfo] and [mp3Info] do there.
 AudioInfo audioInfo(Uint8List bytes) {
-  _checkNotEmpty(bytes);
+  checkNotEmpty(bytes);
   switch (detectFormat(bytes)) {
     case AudioFormat.ogg:
       return oggInfo(bytes);
@@ -366,109 +382,9 @@ Uint8List encodeWav(PcmAudio audio) {
   return bytes;
 }
 
-/// The shared decode path: validate, copy into native memory, call the decoder,
-/// copy the samples back into a Dart [Int16List] and free the native buffer.
-typedef _DecodeFn =
-    int Function(
-      Pointer<Uint8>,
-      int,
-      Pointer<Int>,
-      Pointer<Int>,
-      Pointer<Int>,
-      Pointer<Pointer<Int16>>,
-    );
-
-PcmAudio _decode(Uint8List bytes, _DecodeFn decode, String formatName) {
-  _checkNotEmpty(bytes);
-
-  final dataPtr = malloc<Uint8>(bytes.length);
-  final outChannels = malloc<Int>();
-  final outRate = malloc<Int>();
-  final outSamplesPerChannel = malloc<Int>();
-  final outSamples = malloc<Pointer<Int16>>();
-  Pointer<Int16>? nativeSamples;
-  try {
-    dataPtr.asTypedList(bytes.length).setAll(0, bytes);
-    final rc = decode(
-      dataPtr,
-      bytes.length,
-      outChannels,
-      outRate,
-      outSamplesPerChannel,
-      outSamples,
-    );
-    if (rc != 0) {
-      throw AudioDecodeException('not a decodable $formatName stream');
-    }
-    final channels = outChannels.value;
-    final rate = outRate.value;
-    final samplesPerChannel = outSamplesPerChannel.value;
-    if (samplesPerChannel <= 0 || channels <= 0 || rate <= 0) {
-      // A stream whose header parses but which yields nothing. Truncating an
-      // Ogg file part way through its first audio page lands here: the decoder
-      // reports success and zero frames, and every caller then works with an
-      // empty result it never checked for. There is no input for which an
-      // empty decode is a useful answer, so it is an error.
-      nativeSamples = outSamples.value;
-      if (nativeSamples != nullptr) adFree(nativeSamples);
-      nativeSamples = null;
-      throw AudioDecodeException(
-        'decoded no audio from this $formatName stream; it is empty or '
-        'truncated before the first complete audio frame',
-      );
-    }
-    nativeSamples = outSamples.value;
-    final total = channels * samplesPerChannel;
-    // Copy out of native memory before freeing it; callers never see a native
-    // pointer.
-    final samples = Int16List.fromList(nativeSamples.asTypedList(total));
-    adFree(nativeSamples);
-    nativeSamples = null;
-    return PcmAudio(sampleRate: rate, channels: channels, samples: samples);
-  } finally {
-    malloc.free(dataPtr);
-    malloc.free(outChannels);
-    malloc.free(outRate);
-    malloc.free(outSamplesPerChannel);
-    malloc.free(outSamples);
-    // Catches a native buffer that was allocated but never reached adFree(),
-    // for example because copying it out threw.
-    if (nativeSamples != null) {
-      adFree(nativeSamples);
-    }
-  }
-}
-
-typedef _InfoFn =
-    int Function(Pointer<Uint8>, int, Pointer<Int>, Pointer<Int>, Pointer<Int>);
-
-AudioInfo _info(Uint8List bytes, _InfoFn readInfo, String formatName) {
-  _checkNotEmpty(bytes);
-
-  final dataPtr = malloc<Uint8>(bytes.length);
-  final outChannels = malloc<Int>();
-  final outRate = malloc<Int>();
-  final outFrames = malloc<Int>();
-  try {
-    dataPtr.asTypedList(bytes.length).setAll(0, bytes);
-    final rc = readInfo(dataPtr, bytes.length, outChannels, outRate, outFrames);
-    if (rc != 0) {
-      throw AudioDecodeException('not a readable $formatName stream');
-    }
-    return AudioInfo(
-      sampleRate: outRate.value,
-      channels: outChannels.value,
-      frameCount: outFrames.value,
-    );
-  } finally {
-    malloc.free(dataPtr);
-    malloc.free(outChannels);
-    malloc.free(outRate);
-    malloc.free(outFrames);
-  }
-}
-
-void _checkNotEmpty(Uint8List bytes) {
+/// Throws an [ArgumentError] when [bytes] is empty. Shared with the native
+/// decoders, which check before copying the input.
+void checkNotEmpty(Uint8List bytes) {
   if (bytes.isEmpty) {
     throw ArgumentError.value(bytes, 'bytes', 'must not be empty');
   }

@@ -27,7 +27,8 @@ environment:
 
 # Android and iOS run the decode test on an emulator and a simulator in
 # flutter-compat.yaml. Linux, macOS and Windows run the Dart VM tests. The
-# package uses dart:ffi and does not run on the web.
+# package compiles for the web, but Ogg Vorbis and MP3 decoding throws
+# UnsupportedError there. Web is not listed for that reason.
 platforms:
   android:
   ios:

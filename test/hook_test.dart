@@ -1,3 +1,6 @@
+@TestOn('vm')
+library;
+
 import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:test/test.dart';
