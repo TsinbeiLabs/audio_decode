@@ -1,6 +1,6 @@
 /// Turns an app made by `flutter create` into the consumer the compat
-/// workflow builds: copies the on-device decode test and one fixture into it
-/// and declares the fixture as an asset.
+/// workflow builds: copies the on-device decode test and its fixtures into it
+/// and declares the fixtures as assets.
 ///
 /// Usage: `dart tool/ci/prepare_app.dart <app directory>`
 ///
@@ -9,8 +9,8 @@ library;
 
 import 'dart:io';
 
-/// The fixture `integration_test/decode_test.dart` loads, under `assets/`.
-const fixture = 'sine_44100_stereo_1s.ogg';
+/// The fixtures `integration_test/decode_test.dart` loads, under `assets/`.
+const fixtures = ['sine_44100_stereo_1s.ogg', 'sine_44100_stereo_1s.mp3'];
 
 void main(List<String> args) {
   if (args.length != 1) {
@@ -25,10 +25,12 @@ void main(List<String> args) {
     File('${ci.path}/integration_test/decode_test.dart'),
     File('${app.path}/integration_test/decode_test.dart'),
   );
-  _copy(
-    File('${repo.path}/test/fixtures/$fixture'),
-    File('${app.path}/assets/$fixture'),
-  );
+  for (final fixture in fixtures) {
+    _copy(
+      File('${repo.path}/test/fixtures/$fixture'),
+      File('${app.path}/assets/$fixture'),
+    );
+  }
 
   // The generated pubspec has a top-level `flutter:` section with no asset
   // list. Inserting one right below the key keeps the rest of the template.
@@ -39,7 +41,10 @@ void main(List<String> args) {
     stderr.writeln('unexpected pubspec layout in ${pubspec.path}');
     exit(1);
   }
-  lines.insertAll(section + 1, ['  assets:', '    - assets/$fixture']);
+  lines.insertAll(section + 1, [
+    '  assets:',
+    for (final fixture in fixtures) '    - assets/$fixture',
+  ]);
   pubspec.writeAsStringSync('${lines.join('\n')}\n');
   print('prepared ${app.path}');
 }
