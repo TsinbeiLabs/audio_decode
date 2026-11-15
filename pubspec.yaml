@@ -43,5 +43,11 @@ dependencies:
   native_toolchain_c: '>=0.19.2 <0.20.0'
 
 dev_dependencies:
-  test: ^1.25.0
+  # Lower bounds that `dart pub downgrade` can build and run. test 1.25 and
+  # 1.26 resolve analyzer 6.1 or older, which needs watcher 1.0.0, and that does
+  # not compile on current SDKs.
+  test: ^1.27.0
+  # package:test allows frontend_server_client 3.x, which starts a frontend
+  # server snapshot that 64-bit SDKs do not ship.
+  frontend_server_client: ^4.0.0
   lints: ^6.0.0
