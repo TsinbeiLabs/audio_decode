@@ -183,6 +183,29 @@ void main() {
       );
     });
 
+    test('a fmt chunk declared shorter than 16 bytes is truncated', () {
+      final file = wavFile(
+        formatTag: 1,
+        channels: 1,
+        sampleRate: 44100,
+        bitsPerSample: 16,
+        payload: const [0, 0],
+      );
+      // The bytes are all there. Only the declared size is too small.
+      ByteData.sublistView(file).setUint32(16, 14, Endian.little);
+
+      expect(
+        () => decodeWav(file),
+        throwsA(
+          isA<AudioDecodeException>().having(
+            (error) => error.message,
+            'message',
+            'WAV fmt chunk is truncated',
+          ),
+        ),
+      );
+    });
+
     test('a RIFF/WAVE header without a fmt chunk is corrupt input', () {
       final bytes = Uint8List(12);
       ByteData.sublistView(bytes).setUint32(4, 4, Endian.little);
