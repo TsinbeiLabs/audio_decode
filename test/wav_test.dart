@@ -161,6 +161,46 @@ void main() {
       );
       expect(decodeWav(file).samples, hasLength(2));
     });
+
+    test('a truncated fmt chunk throws AudioDecodeException', () {
+      final bytes = Uint8List(28);
+      final data = ByteData.sublistView(bytes);
+      data.setUint32(4, 20, Endian.little);
+      data.setUint32(16, 16, Endian.little);
+      bytes.setRange(0, 4, 'RIFF'.codeUnits);
+      bytes.setRange(8, 12, 'WAVE'.codeUnits);
+      bytes.setRange(12, 16, 'fmt '.codeUnits);
+
+      expect(
+        () => decodeWav(bytes),
+        throwsA(
+          isA<AudioDecodeException>().having(
+            (error) => error.message,
+            'message',
+            'WAV fmt chunk is truncated',
+          ),
+        ),
+      );
+    });
+
+    test('a RIFF/WAVE header without a fmt chunk is corrupt input', () {
+      final bytes = Uint8List(12);
+      ByteData.sublistView(bytes).setUint32(4, 4, Endian.little);
+      bytes.setRange(0, 4, 'RIFF'.codeUnits);
+      bytes.setRange(8, 12, 'WAVE'.codeUnits);
+
+      expect(detectFormat(bytes), AudioFormat.wav);
+      expect(
+        () => decodeWav(bytes),
+        throwsA(
+          isA<AudioDecodeException>().having(
+            (error) => error.message,
+            'message',
+            'WAV file has no fmt chunk',
+          ),
+        ),
+      );
+    });
   });
 
   group('wavInfo', () {

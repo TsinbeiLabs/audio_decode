@@ -23,6 +23,7 @@
 - README: `bench/vs_ffmpeg.dart` is described as checking that both paths decode
   the same number of frames, which is what it checks.
 - `example/README.md` lists all three examples.
+- README: the API list names `decodeWav` and `wavInfo`.
 - README: the comparison section now says when just_audio is the better
   choice and when this package is.
 - The package resolves again in apps on Flutter 3.38 to 3.44. The
