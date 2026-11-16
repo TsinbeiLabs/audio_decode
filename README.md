@@ -131,7 +131,7 @@ final mp3 = decodeMp3(await File('clip.mp3').readAsBytes());
   `AudioFormat.wav` or `AudioFormat.unknown`.
 - `encodeWav(PcmAudio)` returns a canonical 16-bit PCM WAV as `Uint8List`.
 - `audioInfo(Uint8List)` returns an `AudioInfo` with `sampleRate`, `channels`,
-  `frameCount` and `duration` without decoding to PCM; `oggInfo`, `mp3Info` and
+  `frameCount` and `duration` without decoding to PCM. `oggInfo`, `mp3Info` and
   `wavInfo` do the same for a known format. See below.
 
 Empty input throws `ArgumentError`. Bytes that are not decodable audio throw
