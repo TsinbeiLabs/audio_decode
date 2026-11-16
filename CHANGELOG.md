@@ -1,5 +1,8 @@
 ## 1.3.6
 
+- The pubspec description now lists WAV next to MP3 and Ogg Vorbis, says that
+  MP3 and Ogg Vorbis are native code, and says that the web decodes WAV only.
+  It no longer says "pure-Dart friendly".
 - The package compiles for the web. There `detectFormat`, WAV decoding,
   `encodeWav`, the `PcmAudio` methods and the resampling helpers give the same
   results as on the VM. Ogg Vorbis and MP3 decoding throws `UnsupportedError`
